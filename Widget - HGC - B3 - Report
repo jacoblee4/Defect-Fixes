@@ -15,38 +15,38 @@
   
   <div class="picker-container" ng-if="c.data.delegatedToMe || c.data.eventManager">
     <div class="picker-item">Selection</div>
-    <div  class="picker-item">
+    <div class="picker-item">
       <sn-choice-list ng-if="c.data.delegatedToMe || c.data.eventManager" 
                       sn-model="c.selectionChoice"
                       sn-items="c.selectionItems"
                       sn-value-field="choiceValue"
-  					  sn-text-field="choiceDisplay"
+                      sn-text-field="choiceDisplay"
                       sn-options="c.selectionOptions"
                       sn-on-change="selectionChanged(selectedValue)"
                       />
     </div>
     
     <div class="picker-item" ng-if="c.selectionChoice == 'delegated_users' || c.selectionChoice == 'users'">User</div>
-    <div  class="picker-item" ng-if="c.selectionChoice == 'delegated_users' || c.selectionChoice == 'users'">
-      <sn-record-picker ng-change="" field="userSelected" table="'sys_user'" display-field="'name'" value-field="'sys_id'" search-fields="'user_name,name'" page-size="100" default-query="data.fieldUserQuery" />
+    <div class="picker-item" ng-if="c.selectionChoice == 'delegated_users' || c.selectionChoice == 'users'">
+      <sn-record-picker field="userSelected" table="'sys_user'" display-field="'name'" value-field="'sys_id'" search-fields="'user_name,name'" page-size="100" default-query="data.fieldUserQuery" />
     </div>
   </div>
   
   <div class="picker-container">
     <div class="picker-item">From</div>
-    <div  class="picker-item">
-      <sp-date-picker id="from" sn-change="customDate()" field="c.data.from"  ng-model="c.data.from" 
-                      sn-disabled="false" side-by-side="true" ></sp-date-picker> 
+    <div class="picker-item">
+      <sp-date-picker id="b3_from" field="{label: 'From'}" ng-model="c.data.from"
+                      sn-disabled="false"></sp-date-picker>
     </div>
-    <div  class="picker-item">To</div>
+    <div class="picker-item">To</div>
 
-    <div  class="picker-item">
-      <sp-date-picker id="to" sn-change="customDate()" field="c.data.to" ng-model="c.data.to" 
-                      sn-disabled="false" side-by-side="true" ></sp-date-picker> 
+    <div class="picker-item">
+      <sp-date-picker id="b3_to" field="{label: 'To'}" ng-model="c.data.to"
+                      sn-disabled="false"></sp-date-picker>
     </div>
 
     <div>
-      <button ng-click="filterEvents()" class="submit" >Submit</button>
+      <button ng-click="filterEvents()" class="submit">Submit</button>
     </div>
   </div>
   
@@ -58,7 +58,7 @@
     </li>
 
     <div id="printableArea" ng-if="c.data.sumEvents != 0">
-      <table style="width:600px" class="list-group" id="export">
+      <table style="width:600px" class="list-group" id="export_table">
         <tr>
           <th class="tab_header">First Name</th>
           <th class="tab_header">Last Name</th>
@@ -75,15 +75,6 @@
           <th class="tab_header">CRA Approval Status</th>
         </tr>
 
-        <!--<tr>
-          <th class="tab_elem">Total</th>
-          <th class="tab_elem">{{c.data.sumEvents}}</th>
-          <th class="tab_elem">{{c.data.sumHours}}</th>
-          <th class="tab_elem">N/A</th>
-          <th class="tab_elem">N/A</th>
-          <th class="tab_elem">N/A</th>
-          <th class="tab_elem">N/A</th>
-        </tr>-->
         <tr class="tr_click" ng-repeat="item in c.data.events | limitTo:items_per_page:items_per_page*(pagination.currentPage-1)">
 
           <th ng-click="rowClick(item.url)" class="tab_elem">{{item.first_name}}</th>
@@ -122,14 +113,10 @@
 
       <br>
       
-      <div id="export"> 
-        <!--<iframe id="txtArea1" style="display:none"></iframe>-->
+      <div id="export_buttons"> 
         <button class="btn btn-primary" ng-click="exportPDF()">Export to PDF</button>
         <button class="btn btn-primary" ng-click="fnExcelReport()" style="color :white;">Export to Excel</button>
       </div>
-      <!--<button type="button" class="report">
-      	<a target="_self" style="color :white;" href = "/x_banun_b3_m2m_users_events.do?EXCEL&sysparm_query={{c.data.encodedQuery}}" >Download Participation Report</a>
-      </button>-->
     </div>
   </div>
 </div>
