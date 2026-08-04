@@ -1,6 +1,6 @@
 // HTML
 
-<div class="container">
+<div class="b3-report">
 
   <a id="greet">Participation Report</a>
   <hr style="height:20px; width:45%;color:grey;background:linear-gradient(to right, lightgray,  #a9a9a9); margin:0px;">
@@ -94,7 +94,7 @@
         </tr>
       </table>
 
-      <table style="width:600px;">
+      <table style="width:600px;" id="totals_table">
         <tr>
           <th class="tab_header">Total Activities</th>
           <th class="tab_header">Total Hours</th>
@@ -130,108 +130,101 @@
 
 // CSS
 
-.container {
+.b3-report {
   margin-bottom: 50px;
-}
-th{
-  text-align:center;
-}
 
-.top {
+  th { text-align: center; }
 
-  color : black;
-  //border : 1px solid black;
-  //background-color : #f0f3f4;
-  display : grid;
-  grid-template-columns: auto auto;
-  padding: 20px 20px;
-  box-shadow : 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  margin : 25px;
-  margin-left : 0px;
-  width:600px;
+  #greet {
+    color: black;
+    font-weight: bold;
+    font-size: 24px;
+  }
 
-}
+  .top {
+    color: black;
+    display: grid;
+    grid-template-columns: auto auto;
+    padding: 20px 20px;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+    margin: 25px;
+    margin-left: 0px;
+    width: 600px;
+  }
 
-#greet {
-  color : black;
-  font-weight : bold;
-  font-size : 24px;  
-}
+  .picker-container {
+    width: 600px;
+    display: grid;
+    grid-template-columns: 90px 250px 40px 250px auto;
+    padding-bottom: 20px;
+  }
 
-.picker-container{
-  width :600px;
-  display : grid;
-  grid-template-columns: 90px 250px 40px 250px auto;
-  padding-bottom : 20px;
-}
+  .picker-item {
+    color: black;
+    font-weight: bold;
+    padding: 10px;
+    text-align: center;
+    line-height: 2;
+  }
 
-.picker-item{
-  color : black;
-  font-weight : bold;
-  padding : 10px;
-  text-align : center;
-  line-height : 2;
-}
-
-.picker-item-options {
-	grid-column-start: 1;
+  .picker-item-options {
+    grid-column-start: 1;
     grid-column-end: 3;
-}
+  }
 
-.submit{
-  background: linear-gradient(to right, #00AAE3, #3363FF, #7B12D4);
-  width : 90px;
-  //font-weight : bold;
-  font-size : 16px;
-  color : white;
-  border : none;
-  border-radius : 50px;
-  margin-top : 10px;
-  margin-left : 15px;
-  line-height : 2;
-}
+  .submit {
+    background: linear-gradient(to right, #00AAE3, #3363FF, #7B12D4);
+    width: 90px;
+    font-size: 16px;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    margin-top: 10px;
+    margin-left: 15px;
+    line-height: 2;
+  }
 
-.submit:hover{
-  background: linear-gradient(to right, #0088b5, #333dff, #6510b0);
-}
+  .submit:hover {
+    background: linear-gradient(to right, #0088b5, #333dff, #6510b0);
+  }
 
-.tab_header{
-  color : white;
-  line-height : 30px;
-  font-weight : bold;
-  background : black;
-  border : 2px solid white;
-  font-size : 17px;
-  padding : 10px;
+  .tab_header {
+    color: white;
+    line-height: 30px;
+    font-weight: bold;
+    background: black;
+    border: 2px solid white;
+    font-size: 17px;
+    padding: 10px;
+  }
 
-}
-/* Background of strip table */
-tr:nth-child(odd) {background-color: #f2f2f2;}
-tr:nth-child(even) {background-color: #d6d6d6;}
+  #export_table,
+  #totals_table {
+    tr:nth-child(odd)  { background-color: #f2f2f2; }
+    tr:nth-child(even) { background-color: #d6d6d6; }
+  }
 
-.tab_elem{
-  width : 100px; 
-  color : black;
-  border : 2px solid white;
-  padding : 5px;
-}
+  .tab_elem {
+    width: 100px;
+    color: black;
+    border: 2px solid white;
+    padding: 5px;
+  }
 
-.report{
-  font-size : 17px;
-  background-color : black;
-  margin-left : 60px;
+  .report {
+    font-size: 17px;
+    background-color: black;
+    margin-left: 60px;
+  }
 
-}
-.report:hover{
-  font-size : 20px;
-}
+  .report:hover { font-size: 20px; }
 
-.tr_click:hover{
-  background-color: #00AAE3;
-}
-tr > a{
-  color: black;
-  text-decoration: none;
+  .tr_click:hover { background-color: #00AAE3; }
+
+  tr > a {
+    color: black;
+    text-decoration: none;
+  }
 }
 
 
