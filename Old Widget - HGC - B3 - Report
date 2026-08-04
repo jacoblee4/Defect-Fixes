@@ -1,1 +1,782 @@
-test
+// HTML
+
+<div class="container">
+
+  <a id="greet">Participation Report</a>
+  <hr style="height:20px; width:45%;color:grey;background:linear-gradient(to right, lightgray,  #a9a9a9); margin:0px;">
+
+  <li class="top">  
+    <div>
+      Below you will find all the hours you have accumulated during your lifetime at BankUnited. 
+      <strong style="text-decoration: underline; color:red;">Note that your hours must be submitted in order to appear on the report.</strong>
+      Query by date and download your report.     
+    </div>
+  </li>
+  
+  <div class="picker-container" ng-if="c.data.delegatedToMe || c.data.eventManager">
+    <div class="picker-item">Selection</div>
+    <div  class="picker-item">
+      <sn-choice-list ng-if="c.data.delegatedToMe || c.data.eventManager" 
+                      sn-model="c.selectionChoice"
+                      sn-items="c.selectionItems"
+                      sn-value-field="choiceValue"
+  					  sn-text-field="choiceDisplay"
+                      sn-options="c.selectionOptions"
+                      sn-on-change="selectionChanged(selectedValue)"
+                      />
+    </div>
+    
+    <div class="picker-item" ng-if="c.selectionChoice == 'delegated_users' || c.selectionChoice == 'users'">User</div>
+    <div  class="picker-item" ng-if="c.selectionChoice == 'delegated_users' || c.selectionChoice == 'users'">
+      <sn-record-picker ng-change="" field="userSelected" table="'sys_user'" display-field="'name'" value-field="'sys_id'" search-fields="'user_name,name'" page-size="100" default-query="data.fieldUserQuery" />
+    </div>
+  </div>
+  
+  <div class="picker-container">
+    <div class="picker-item">From</div>
+    <div  class="picker-item">
+      <sp-date-picker id="from" sn-change="customDate()" field="c.data.from"  ng-model="c.data.from" 
+                      sn-disabled="false" side-by-side="true" ></sp-date-picker> 
+    </div>
+    <div  class="picker-item">To</div>
+
+    <div  class="picker-item">
+      <sp-date-picker id="to" sn-change="customDate()" field="c.data.to" ng-model="c.data.to" 
+                      sn-disabled="false" side-by-side="true" ></sp-date-picker> 
+    </div>
+
+    <div>
+      <button ng-click="filterEvents()" class="submit" >Submit</button>
+    </div>
+  </div>
+  
+  <div ng-if="c.data.submitted">
+    <li class="top" ng-if="c.data.sumEvents == 0">
+      <div style="color:red">
+        No volunteering records have been found. Participation Report is only available for users that submitted their hours.
+      </div>
+    </li>
+
+    <div id="printableArea" ng-if="c.data.sumEvents != 0">
+      <table style="width:600px" class="list-group" id="export">
+        <tr>
+          <th class="tab_header">First Name</th>
+          <th class="tab_header">Last Name</th>
+          <th class="tab_header">Event Title</th>
+          <th class="tab_header">Event Date</th>
+          <th class="tab_header">Hours Volunteered</th>
+          <th class="tab_header">Organization Name</th>
+          <th class="tab_header">LMI%</th>
+          <th class="tab_header">Board Member</th>
+          <th class="tab_header">Volunteer Category</th>
+          <th ng-if="c.data.eventManager" class="tab_header">BU Team</th>
+          <th ng-if="c.data.eventManager" class="tab_header">CRA</th>
+          <th class="tab_header">Type of Event</th>
+          <th class="tab_header">CRA Approval Status</th>
+        </tr>
+
+        <!--<tr>
+          <th class="tab_elem">Total</th>
+          <th class="tab_elem">{{c.data.sumEvents}}</th>
+          <th class="tab_elem">{{c.data.sumHours}}</th>
+          <th class="tab_elem">N/A</th>
+          <th class="tab_elem">N/A</th>
+          <th class="tab_elem">N/A</th>
+          <th class="tab_elem">N/A</th>
+        </tr>-->
+        <tr class="tr_click" ng-repeat="item in c.data.events | limitTo:items_per_page:items_per_page*(pagination.currentPage-1)">
+
+          <th ng-click="rowClick(item.url)" class="tab_elem">{{item.first_name}}</th>
+          <th ng-click="rowClick(item.url)" class="tab_elem">{{item.last_name}}</th>
+          <th ng-click="rowClick(item.url)" class="tab_elem">{{item.title}}</th>
+          <th ng-click="rowClick(item.url)" class="tab_elem">{{item.date}}</th>
+          <th ng-click="rowClick(item.url)" class="tab_elem">{{item.hours}}</th>
+          <th ng-click="rowClick(item.url)" class="tab_elem">{{item.organization}}</th>
+          <th ng-click="rowClick(item.url)" class="tab_elem">{{item.lmi}}</th>
+          <th ng-click="rowClick(item.url)" class="tab_elem">{{item.board_member}}</th>
+          <th ng-click="rowClick(item.url)" class="tab_elem">{{item.category}}</th>
+          <th ng-if="c.data.eventManager" ng-click="rowClick(item.url)" class="tab_elem">{{item.bu_team}}</th>
+          <th ng-if="c.data.eventManager" ng-click="rowClick(item.url)" class="tab_elem">{{item.cra}}</th>
+          <th ng-click="rowClick(item.url)" class="tab_elem">{{item.type}}</th>
+          <th ng-click="rowClick(item.url)" class="tab_elem">{{item.validation_status}}</th>
+
+        </tr>
+      </table>
+
+      <table style="width:600px;">
+        <tr>
+          <th class="tab_header">Total Activities</th>
+          <th class="tab_header">Total Hours</th>
+        </tr>
+        <tr>
+          <th class="tab_elem">{{c.data.sumEvents}}</th>
+          <th class="tab_elem">{{c.data.sumHours}}</th>
+        </tr>
+      </table>
+      
+      <span class="ps-page">
+        <uib-pagination class="pagination-sm pagination" max-size="8" total-items="c.data.events.length"
+                        ng-model="pagination.currentPage" previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page="items_per_page">
+        </uib-pagination>
+      </span>
+
+      <br>
+      
+      <div id="export"> 
+        <!--<iframe id="txtArea1" style="display:none"></iframe>-->
+        <button class="btn btn-primary" ng-click="exportPDF()">Export to PDF</button>
+        <button class="btn btn-primary" ng-click="fnExcelReport()" style="color :white;">Export to Excel</button>
+      </div>
+      <!--<button type="button" class="report">
+      	<a target="_self" style="color :white;" href = "/x_banun_b3_m2m_users_events.do?EXCEL&sysparm_query={{c.data.encodedQuery}}" >Download Participation Report</a>
+      </button>-->
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+// CSS
+
+.container {
+  margin-bottom: 50px;
+}
+th{
+  text-align:center;
+}
+
+.top {
+
+  color : black;
+  //border : 1px solid black;
+  //background-color : #f0f3f4;
+  display : grid;
+  grid-template-columns: auto auto;
+  padding: 20px 20px;
+  box-shadow : 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  margin : 25px;
+  margin-left : 0px;
+  width:600px;
+
+}
+
+#greet {
+  color : black;
+  font-weight : bold;
+  font-size : 24px;  
+}
+
+.picker-container{
+  width :600px;
+  display : grid;
+  grid-template-columns: 90px 250px 40px 250px auto;
+  padding-bottom : 20px;
+}
+
+.picker-item{
+  color : black;
+  font-weight : bold;
+  padding : 10px;
+  text-align : center;
+  line-height : 2;
+}
+
+.picker-item-options {
+	grid-column-start: 1;
+    grid-column-end: 3;
+}
+
+.submit{
+  background: linear-gradient(to right, #00AAE3, #3363FF, #7B12D4);
+  width : 90px;
+  //font-weight : bold;
+  font-size : 16px;
+  color : white;
+  border : none;
+  border-radius : 50px;
+  margin-top : 10px;
+  margin-left : 15px;
+  line-height : 2;
+}
+
+.submit:hover{
+  background: linear-gradient(to right, #0088b5, #333dff, #6510b0);
+}
+
+.tab_header{
+  color : white;
+  line-height : 30px;
+  font-weight : bold;
+  background : black;
+  border : 2px solid white;
+  font-size : 17px;
+  padding : 10px;
+
+}
+/* Background of strip table */
+tr:nth-child(odd) {background-color: #f2f2f2;}
+tr:nth-child(even) {background-color: #d6d6d6;}
+
+.tab_elem{
+  width : 100px; 
+  color : black;
+  border : 2px solid white;
+  padding : 5px;
+}
+
+.report{
+  font-size : 17px;
+  background-color : black;
+  margin-left : 60px;
+
+}
+.report:hover{
+  font-size : 20px;
+}
+
+.tr_click:hover{
+  background-color: #00AAE3;
+}
+tr > a{
+  color: black;
+  text-decoration: none;
+}
+
+
+
+
+
+
+
+
+
+// Server Script
+
+(function () {
+	var b3_utils = new HGC_B3_Utils();
+	
+	if (input == undefined) {  // On load
+		data.fieldUserQuery = "active=true";
+		
+		data.from = "";
+		data.to = "";
+		
+		data.eventManager = gs.hasRole("x_banun_b3.event_manager");
+		data.delegatedAccess = b3_utils.getDelegatedUsers(gs.getUserID());
+		data.delegatedToMe = data.delegatedAccess.length != 0;
+		
+		// Set default Selection choice to 'Me'
+		data.selectionChoice = 'me';
+		
+		// Populate selection choices depending on if the current user has delegated users and/or is a manager
+		data.selectionItems = [{
+			choiceDisplay: 'Me',
+			choiceValue: 'me'
+		}];
+		if (data.delegatedToMe)
+			data.selectionItems.push({
+				choiceDisplay: 'Users delegated to me',
+				choiceValue: 'delegated_users'
+			});
+		if (data.eventManager)
+			data.selectionItems.push({
+				choiceDisplay: 'All users',
+				choiceValue: 'users'
+			});
+		
+	} else if (input.action == 'filterEvents') {  // on Submit
+		updateResults();
+		data.submitted = true;
+	}
+	
+	function updateResults() {
+		// Initiate vars
+		data.events = [];
+		data.event_ids = [];
+		data.sumEvents = 0;
+		data.sumHours = 0;
+		
+		// Filter
+		data.userSelected = input.userSelected || { value: "", displayValue: ""};
+		
+		var userQuery = null;
+		if (input.selectionChoice == 'me') {
+			userQuery = gs.getUserID();
+		} else {
+			// If a specific user was selected
+			if (data.userSelected.value != "") {
+				userQuery = data.userSelected.value;
+			} else {
+				if (input.selectionChoice == 'delegated_users') {
+					userQuery = input.delegatedAccess.toString();
+				}
+			}
+		}
+		
+		// Date range		
+		var fromQuery = input.from != "" ? ">=javascript:gs.dateGenerate('" + input.from + "','00:00:00')" : null;
+		var toQuery = input.to != "" ? "<=javascript:gs.dateGenerate('" + input.to + "','23:59:59')" : null;
+		
+		// Get events
+		var event_array = getEvents(userQuery, fromQuery, toQuery);
+		var event_index = 0;
+		var event_len = event_array.length;
+
+		// Get IVAs
+		var iva_array = getIVAs(userQuery, fromQuery, toQuery);
+		var iva_index = 0;
+		var iva_len = iva_array.length;
+
+		// Sort by date
+		while (data.events.length != event_len + iva_len){
+			// Events are all in the final object
+			if (event_index == event_len){
+				for (var i=iva_index; i<iva_len; i++){
+					data.events.push(iva_array[i]);
+					data.event_ids.push(iva_array[i].sys_id);
+					data.sumHours += +iva_array[i].hours;
+					data.sumEvents++;
+				}
+			}
+			// IVAs are all in the final object
+			else if (iva_index == iva_len){
+				for (var j=event_index; j<event_len; j++){
+					data.events.push(event_array[j]);
+					data.event_ids.push(event_array[j].sys_id);
+					data.sumHours += +event_array[j].hours;
+					data.sumEvents++;
+				}
+			}
+
+			// Not finished sorting
+			else{
+				// Call sorting helper (iva greater)
+				if (event_greater(event_array[event_index].date, iva_array[iva_index].date)){
+					data.events.push(iva_array[iva_index]);
+					data.event_ids.push(iva_array[iva_index].sys_id);
+					data.sumHours += +iva_array[iva_index].hours;
+					iva_index++;
+					data.sumEvents++;
+				}
+
+				// Event greater
+				else{
+					data.events.push(event_array[event_index]);
+					data.event_ids.push(event_array[event_index].sys_id);
+					data.sumHours += +event_array[event_index].hours;
+					event_index++;
+					data.sumEvents++;
+				}
+			}
+		}
+	}
+
+	function getEvents(userQuery, fromQuery, toQuery){
+
+		// get the scheduled events
+		var registration = new GlideRecord('x_banun_b3_m2m_users_events');
+		
+		if (userQuery)
+			registration.addQuery('user', 'IN', userQuery);
+		if (fromQuery)
+			registration.addEncodedQuery('b3_event.start_time' + fromQuery);
+		if (toQuery)
+			registration.addEncodedQuery('b3_event.end_time' + toQuery);
+		
+		registration.addQuery('state', 'accepted');
+		registration.orderByDesc('b3_event.start_time');
+		registration.addEncodedQuery('b3_event.end_timeRELATIVELT@hour@ago@1');
+
+		// Save for PDF export
+		data.eventsQuery = registration.getEncodedQuery();
+		
+		registration.query();
+		
+		var event_array = [];
+
+		while (registration.next()) {
+			var event = registration.b3_event.getRefRecord();
+			var location_dv = [];
+			var logo_url = '';
+			var guidestar_org = "";
+			if (event.getValue('guidestar_organization_payload')) {								
+				try {
+					guidestar_org = JSON.parse(event.getValue('guidestar_organization_payload'));
+				} catch(ex) {
+					var linkToRecord = '<a href="x_banun_b3_m2m_users_events.do?sys_id=' + registration.sys_id + '" class="breadcrumb" target="_blank">' + registration.b3_event.getDisplayValue() + '</a> ';
+					gs.addErrorMessage(linkToRecord + " record has been skipped due to a Jason parsing error. Verify that the 'guidestar_organization_payload' field of this record contains valid Json Syntax");
+				}				
+				if (guidestar_org.logo_url) {
+					logo_url = guidestar_org.logo_url;
+				}
+			}
+			var county = ""; var msa = ""; var csa = "";
+			if (event.getValue('b3_county')) {
+				county = event.b3_county.getRefRecord();
+				if (county.msa) {
+					msa = county.getDisplayValue('msa');
+					if (county.msa.csa)
+						csa = county.msa.getDisplayValue('csa');
+				}
+			}
+			
+			event_array.push({
+				sys_id: event.getUniqueValue(),
+				title: event.getValue('title'),
+				date: event.getDisplayValue('start_time').split(" ")[0],  //get Date w/out time
+				first_name: getUserRec(registration.getValue('user')).getValue('first_name'),
+				last_name: getUserRec(registration.getValue('user')).getValue('last_name'),
+				job_title: getUserRec(registration.getValue('user')).getValue('title'),
+				officer_title: getUserRec(registration.getValue('user')).getValue('u_officer_title'),
+				county: event.getDisplayValue('b3_county'),
+				state: event.getDisplayValue('b3_state'),
+				msa: msa,
+				csa: csa,
+				organization: event.getValue('guidestar_organization_payload') ? guidestar_org.organization_name : "",
+				lmi: event.getDisplayValue("lmi_percentage"),
+				lmi_person: "",
+				type: 'Scheduled Event',
+				board_member: registration.getValue("board_member") == 1 ? "Yes" : "No",
+				bu_team: event.getDisplayValue("bu_team") || "",
+				documents: b3_utils.getTestimonials(event.getUniqueValue()).length,
+				category: event.category.getDisplayValue(),
+				cra: event.community_development_cra.getDisplayValue(),
+				validation_status: registration.getDisplayValue('hours_approval_state') || "",
+				url: "/x_banun_b3_m2m_users_events.do?sys_id=" + registration.getUniqueValue(),
+				hours : registration.getValue('hours_dec')? "" + registration.getValue('hours_dec') : 0,
+				description: event.getValue('description') ? event.getValue('description').replace(/\n/g, '<br>') : ''
+			});
+		}
+		return event_array;
+	}
+
+	function getIVAs(userQuery, fromQuery, toQuery){
+
+		// get the scheduled events
+		var registration = new GlideRecord('x_banun_b3_iva');
+		
+		if (userQuery)
+			registration.addQuery('participant', 'IN', userQuery);
+		if (fromQuery) 
+			registration.addEncodedQuery('date' + fromQuery);
+		if (toQuery)
+			registration.addEncodedQuery('date' + toQuery);
+
+		registration.orderByDesc('date');
+		
+		// Save for PDF export
+		data.ivasQuery = registration.getEncodedQuery();
+		
+		registration.query();
+		var iva_array = [];
+
+		while (registration.next()) {
+			var guidestar_org = "";
+			if (registration.getValue('guidestar_organization_payload')) {
+				try {
+					guidestar_org = JSON.parse(registration.getValue('guidestar_organization_payload'));
+				} catch(ex) {
+					var link_to_record = '<a href="x_banun_b3_iva.do?sys_id=' + registration.sys_id + '" class="breadcrumb" target="_blank">' + registration.activity_name + '</a> ';
+					gs.addErrorMessage(link_to_record + " record has been skipped due to a Jason parsing error. Verify that the 'guidestar_organization_payload' field of this record contains valid Json Syntax");
+				}
+				
+			}
+			var county = ""; var msa = ""; var csa = "";
+			if (registration.getValue('b3_county')) {
+				county = registration.b3_county.getRefRecord();
+				if (county.msa) {
+					msa = county.getDisplayValue('msa');
+					if (county.msa.csa)
+						csa = county.msa.getDisplayValue('csa');
+				}
+			}
+
+			iva_array.push({
+				sys_id: registration.getUniqueValue(),
+				title: registration.getValue('activity_name') ? registration.getValue('activity_name') : "",
+				date: registration.getDisplayValue('date') ? registration.getDisplayValue('date') : "",
+				first_name: registration.getDisplayValue('participant') ? getUserRec(registration.getValue('participant')).getValue('first_name') : "",
+				last_name: registration.getDisplayValue('participant') ? getUserRec(registration.getValue('participant')).getValue('last_name') : "",
+				job_title: registration.getDisplayValue('participant') ? getUserRec(registration.getValue('participant')).getValue('title') : "",
+				officer_title: registration.getDisplayValue('participant') ? getUserRec(registration.getValue('participant')).getValue('u_officer_title') : "",
+				county: registration.getDisplayValue('b3_county'),
+				state: registration.getDisplayValue('b3_state'),
+				msa: msa,
+				csa: csa,
+				organization: registration.getValue('guidestar_organization_payload') ?  guidestar_org.organization_name : "",
+				lmi: "",
+				lmi_person: registration.getValue('activity_lmi_person') == 1 ? "Yes" : "No",
+				type: 'IVA',
+				board_member: registration.getValue("board_member") == 1 ? "Yes" : "No",
+				bu_team: registration.getDisplayValue("bu_team") || "",
+				documents: "",
+				category: registration.category.getDisplayValue()? registration.category.getDisplayValue() : "",
+				cra: registration.community_development_cra.getDisplayValue()? registration.community_development_cra.getDisplayValue() : "",
+				validation_status: registration.approval_state.getDisplayValue()? registration.approval_state.getDisplayValue() : "",
+				url: "/x_banun_b3_iva.do?sys_id=" + registration.getUniqueValue(),
+				hours : registration.getValue('hours_dec')? "" + registration.getValue('hours_dec') : 0,
+				description: registration.getValue('description') ? registration.getValue('description').replace(/\n/g, '<br>') : ''
+			});
+		}
+		return iva_array;
+	}
+
+
+	/**
+	*parm event_date: event date
+	*parm iva_date: iva date
+	*return boolean (event_date is greater thant iva_date)
+	*/
+	function event_greater(event_date, iva_date){
+		var gdt_event = new GlideDateTime(event_date);
+		var gdt_iva = new GlideDateTime(iva_date);
+		return gdt_iva.after(gdt_event);
+	}
+
+
+	//Param is a string date of this format : 08-31-2020
+	//Output is a string date of this format : 2020-08-31
+	function convertDate(date){
+		return date.substr(6,9) + '-' + date.substr(0,2) + date.substr(2,3);
+	}
+	
+	function getUserRec(sys_id){
+		var gr_user = new GlideRecord("sys_user");
+		gr_user.get("sys_id", sys_id);
+		return gr_user;
+	}
+
+})();
+
+
+
+
+
+
+
+
+
+
+// Client Script
+
+api.controller = function($scope, spUtil, $rootScope, $uibModal, spModal) {
+	/* widget controller */
+	var c = this;
+	
+	var dev_in_progress = false;
+
+    if (dev_in_progress) {
+        spUtil.recordWatch($scope, 'sp_widget', 'sys_id=' + c.options.sp_widget, function (name) {
+            top.location.reload();
+        });
+    }
+	
+	// -- Initialize --
+	
+	// Choice list
+	c.selectionOptions = {
+		hideSearch: true
+	};
+	c.selectionItems = c.data.selectionItems;
+	c.selectionChoice = c.data.selectionChoice;
+	
+	// -- Listeners --
+	$scope.pagination = {
+		currentPage: 1
+	};
+
+	$scope.items_per_page = 8;
+
+	$scope.selectionChanged = function (selectedValue) {
+		
+		if (selectedValue == 'delegated_users')
+			c.data.fieldUserQuery = "active=true^sys_idIN" + c.data.delegatedAccess;
+		else
+			c.data.fieldUserQuery = "active=true";
+		
+		c.selectionChoice = selectedValue;
+		$scope.userSelected = {
+			displayValue: "",
+			value: "",
+			name: 'userSelected'
+		};
+	};
+	
+	// Converts a date-string with any user's preferred date format into a Date object
+	function convertStringToDate(inputDate, format) {
+		var lowFormat = format.toLowerCase();
+
+		// Retrieve date from format
+		var year = inputDate.substring(lowFormat.indexOf('y'), lowFormat.indexOf('y') + 4);
+		var month = inputDate.substring(lowFormat.indexOf('m'), lowFormat.indexOf('m') + 2);
+		var day = inputDate.substring(lowFormat.indexOf('d'), lowFormat.indexOf('d') + 2);
+		
+		var outputDate = new Date();
+		outputDate.setFullYear(year, month - 1, day);
+		return outputDate;
+	}
+	
+	$scope.filterEvents = function () {
+		
+		var from = '';
+		var to = '';
+		if (c.data.from != '' || c.data.to != '') {
+			var invalid_dates = [];
+		
+			// Validate dates format
+			var date_regex = /^\d{2,4}(.|-|\/)\d{2}\1\d{2,4}$/;
+
+			if (c.data.from != '' && !c.data.from.match(date_regex)) {
+				invalid_dates.push('From');
+				c.data.from = "";
+			}
+			if (c.data.to != '' && !c.data.to.match(date_regex)) {
+				invalid_dates.push('To');
+				c.data.to = "";
+			}
+
+			if (invalid_dates.length != 0) {
+				spUtil.addErrorMessage("Incorrect date format on the field(s): " + invalid_dates.join(', '));
+				return;
+			}
+
+			// Convert string dates to date objects, corresponding to the user's prefered format
+			if (c.data.from != '')
+				from = convertStringToDate(c.data.from, g_user_date_format);
+			if (c.data.to != '')
+				to = convertStringToDate(c.data.to, g_user_date_format);
+
+			// Validate that the date range is set in order
+			if (from != '' && to != '') {
+				if (from > to) {
+					spUtil.addErrorMessage("The end date must be after the start date.");
+					c.data.from = "", c.data.to = "";
+					return;
+				}
+			}
+			
+			// Convert dates to a yyyy-mm-dd string
+			if (from != '')
+				from = from.toISOString().split('T')[0];
+			if (to != '')
+				to = to.toISOString().split('T')[0];
+		}
+		
+		c.server.get({
+			action: 'filterEvents',
+			selectionChoice: c.selectionChoice,
+			userSelected: $scope.userSelected,
+			delegatedAccess: c.data.delegatedAccess,
+			from: from,
+			to: to
+		}).then(function(r){
+			c.data.submitted = r.data.submitted;
+			c.data.events = r.data.events;
+			c.data.sumEvents = r.data.sumEvents;
+			c.data.sumHours = r.data.sumHours;
+			
+			c.data.eventsQuery = r.data.eventsQuery;
+			c.data.ivasQuery = r.data.ivasQuery;
+		});
+	};
+
+	$scope.rowClick = function(url){
+		window.open(url, '_blank');
+	};
+
+	// Export excel file
+	$scope.fnExcelReport = function(){
+		var tab_text='<table border="2px" style="font-weight : bold;">';
+		var textRange; var j=0;
+		//tab = document.getElementById('headerTable'); // id of table
+		if (c.data.eventManager){
+			tab_text += '<tr style="background-color: black; color:white"><th>First Name</th><th>Last Name</th><th>Job Title</th><th>Officer Title</th><th>County</th><th>State</th><th>MSA</th><th>CSA</th><th>Event Title</th><th>Event Description</th><th>Event Date</th><th>Hours Volunteered</th><th>Organization Name</th><th>LMI%</th><th>LMI</th><th>Board Member</th><th>Volunteer Category</th><th>BU Team</th><th>CD Purpose</th><th>Type of Event</th><th>CRA Approval Status</th></tr>';
+		}
+		else{
+			tab_text += '<tr style="background-color: #aaaaaa;"><th>First Name</th><th>Last Name</th><th>Job Title</th><th>Officer Title</th><th>County</th><th>State</th><th>MSA</th><th>CSA</th><th>Event Title</th><th>Event Description</th><th>Event Date</th><th>Hours Volunteered</th><th>Organization Name</th><th>LMI%</th><th>LMI</th><th>Board Member</th><th>Volunteer Category</th><th>Type of Event</th><th>CRA Approval Status</th></tr>';
+		}
+		for(j = 0 ; j < c.data.events.length ; j++){
+			var index_bg = j % 2;
+			if (index_bg == 1){
+				tab_text +='<tr style="background-color:#f2f2f2">';
+			}
+			else{
+				tab_text +='<tr style="background-color:#d6d6d6">';
+			}
+			tab_text += "<th>" + c.data.events[j].first_name + "</th>";
+			tab_text += "<th>" + c.data.events[j].last_name + "</th>";
+			tab_text += "<th>" + c.data.events[j].job_title + "</th>";
+			tab_text += "<th>" + c.data.events[j].officer_title + "</th>";
+			tab_text += "<th>" + c.data.events[j].county + "</th>";
+			tab_text += "<th>" + c.data.events[j].state + "</th>";
+			tab_text += "<th>" + c.data.events[j].msa + "</th>";
+			tab_text += "<th>" + c.data.events[j].csa + "</th>";
+			tab_text += "<th>" + c.data.events[j].title + "</th>";
+			tab_text += "<th>" + c.data.events[j].description + "</th>";
+			tab_text += "<th>" + c.data.events[j].date + "</th>";
+			tab_text += "<th>" + c.data.events[j].hours + "</th>";
+			tab_text += "<th>" + c.data.events[j].organization + "</th>";
+			tab_text += "<th>" + c.data.events[j].lmi + "</th>";
+			tab_text += "<th>" + c.data.events[j].lmi_person + "</th>";
+			tab_text += "<th>" + c.data.events[j].board_member + "</th>";
+			tab_text += "<th>" + c.data.events[j].category + "</th>";
+			if (c.data.eventManager){
+				tab_text += "<th>" + c.data.events[j].bu_team + "</th>";
+				tab_text += "<th>" + c.data.events[j].cra + "</th>";
+			}
+			tab_text += "<th>" + c.data.events[j].type + "</th>";
+			tab_text += "<th>" + c.data.events[j].validation_status + "</th>";
+
+			tab_text += "</tr>";
+		}
+
+		tab_text=tab_text+"</table>";
+		tab_text= tab_text.replace(/<A[^>]*>|<\/A>/g, "");  // Remove if u want links in your table
+		tab_text= tab_text.replace(/<img[^>]*>/gi,""); // Remove if u want images in your table
+		tab_text= tab_text.replace(/<input[^>]*>|<\/input>/gi, ""); // Removes input params
+
+		var ua = window.navigator.userAgent;
+		var msie = ua.indexOf("MSIE "); 
+
+		if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./))  // If Internet Explorer
+		{
+			txtArea1.document.open("txt/html","replace");
+			txtArea1.document.write(tab_text);
+			txtArea1.document.close();
+			txtArea1.focus(); 
+			sa=txtArea1.document.execCommand("SaveAs",true,"report.csv");
+		}  
+		//else{
+			//sa = window.open('data:application/vnd.ms-excel,' + encodeURIComponent(tab_text));  
+			else {
+    var blob = new Blob([tab_text], {
+        type: "application/vnd.ms-excel;charset=utf-8;"
+    });
+
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "report.xls";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+		//}  
+	};
+	
+	$scope.exportPDF = function () {
+		var url = "/$sp.do?id=participation_report_pdf";
+		url += "&events_query=" + c.data.eventsQuery;
+		url += "&ivas_query=" + c.data.ivasQuery;
+		url += "&event_manager" + c.data.eventManager;
+
+		window.open(url);
+	};
+};
