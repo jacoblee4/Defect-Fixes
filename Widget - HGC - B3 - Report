@@ -35,14 +35,14 @@
   <div class="picker-container">
     <div class="picker-item">From</div>
     <div class="picker-item">
-      <sp-date-picker id="b3_from" field="{label: 'From'}" ng-model="c.data.from"
-                      sn-disabled="false"></sp-date-picker>
+      <<sp-date-picker id="b3_from" field="{label: 'From', type: 'glide_date', name: 'from'}" ng-model="c.data.from"
+                sn-disabled="false"></sp-date-picker>
     </div>
     <div class="picker-item">To</div>
 
     <div class="picker-item">
-      <sp-date-picker id="b3_to" field="{label: 'To'}" ng-model="c.data.to"
-                      sn-disabled="false"></sp-date-picker>
+      <sp-date-picker id="b3_to" field="{label: 'To', type: 'glide_date', name: 'to'}" ng-model="c.data.to"
+                sn-disabled="false"></sp-date-picker>
     </div>
 
     <div>
