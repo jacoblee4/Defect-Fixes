@@ -178,6 +178,12 @@
     grid-column-end: 3;
   }
 
+  /* Safety net: suppress any Bootstrap tooltip rendered inside this widget.
+     This is the transparent rectangle that appeared next to the date pickers. */
+  .tooltip {
+    display: none !important;
+  }
+
   .submit {
     background: linear-gradient(to right, #00AAE3, #3363FF, #7B12D4);
     width: 90px;
@@ -549,7 +555,7 @@
 
 // Client Script
 
-api.controller = function($scope, spUtil, $rootScope, $uibModal, spModal) {
+api.controller = function($scope, spUtil, $rootScope, $uibModal, spModal, $element, $timeout) {
 	/* widget controller */
 	var c = this;
 	
@@ -574,6 +580,34 @@ api.controller = function($scope, spUtil, $rootScope, $uibModal, spModal) {
 	// tooltip and the transparent tooltip rectangle.
 	c.fromField = { label: 'From', type: 'glide_date', value: '', displayValue: '' };
 	c.toField   = { label: 'To',   type: 'glide_date', value: '', displayValue: '' };
+	
+	// sp-date-picker builds its calendar button title from field.label, giving
+	// "Show calendar for From". Bootstrap then converts that title into its own
+	// tooltip element -- which is the stray transparent rectangle.
+	// Strip the Bootstrap binding and fall back to a plain native title.
+	function fixCalendarTooltips() {
+		var root = $element[0].querySelector('.picker-container:last-of-type') || $element[0];
+		var nodes = root.querySelectorAll('[title], [data-original-title], [data-toggle="tooltip"]');
+		
+		angular.forEach(nodes, function (el) {
+			if (window.jQuery) {
+				try { window.jQuery(el).tooltip('destroy'); } catch (e) {}
+			}
+			el.removeAttribute('data-original-title');
+			el.removeAttribute('data-toggle');
+			
+			if (el.tagName === 'BUTTON' || el.querySelector('[class*="calendar"]')) {
+				el.setAttribute('title', 'Show Calendar');
+				el.setAttribute('aria-label', 'Show Calendar');
+			} else {
+				el.removeAttribute('title');
+			}
+		});
+	}
+	
+	// Run once the pickers have rendered, then again in case they render late
+	$timeout(fixCalendarTooltips, 0);
+	$timeout(fixCalendarTooltips, 400);
 	
 	// -- Listeners --
 	$scope.pagination = {
