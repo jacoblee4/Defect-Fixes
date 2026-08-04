@@ -39,14 +39,12 @@
   <div class="picker-container">
     <div class="picker-item">From</div>
     <div class="picker-item">
-      <sp-date-picker ng-if="showPickers" id="b3_from" field="c.fromField" ng-model="c.data.from"
-                      sn-disabled="false"></sp-date-picker>
+      <input type="date" class="date-input" ng-model="c.data.from" aria-label="From date">
     </div>
     <div class="picker-item">To</div>
 
     <div class="picker-item">
-      <sp-date-picker ng-if="showPickers" id="b3_to" field="c.toField" ng-model="c.data.to"
-                      sn-disabled="false"></sp-date-picker>
+      <input type="date" class="date-input" ng-model="c.data.to" aria-label="To date">
     </div>
 
     <div>
@@ -178,6 +176,18 @@
     grid-column-end: 3;
   }
 
+  .date-input {
+    width: 100%;
+    height: 34px;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    color: black;
+    font-weight: normal;
+    line-height: normal;
+  }
+
   .submit {
     background: linear-gradient(to right, #00AAE3, #3363FF, #7B12D4);
     width: 90px;
@@ -245,8 +255,6 @@
 
 (function () {
 	var b3_utils = new HGC_B3_Utils();
-
-	data.currentUserName = gs.getUserDisplayName();
 	
 	if (input == undefined) {  // On load
 		data.fieldUserQuery = "active=true";
@@ -552,7 +560,7 @@
 
 // Client Script
 
-api.controller = function($scope, spUtil, $rootScope, $uibModal, spModal, $timeout) {
+api.controller = function($scope, spUtil, $rootScope, $uibModal, spModal) {
 	/* widget controller */
 	var c = this;
 	
@@ -566,39 +574,11 @@ api.controller = function($scope, spUtil, $rootScope, $uibModal, spModal, $timeo
 	
 	// -- Initialize --
 	
-	// Choice list
 	c.selectionOptions = {
 		hideSearch: true
 	};
 	c.selectionItems = c.data.selectionItems;
 	c.selectionChoice = c.data.selectionChoice;
-	
-	// Date picker field objects - label drives the calendar button tooltip
-	c.fromField = { label: '', type: 'glide_date', name: 'from' };
-	c.toField   = { label: '', type: 'glide_date', name: 'to' };
-	$scope.showPickers = true;
-	
-	// Sets the picker tooltips to the name of whoever the report is being run for
-	function updatePickerLabels() {
-		var name = c.data.currentUserName;
-		
-		if (c.selectionChoice != 'me' && $scope.userSelected && $scope.userSelected.displayValue)
-			name = $scope.userSelected.displayValue;
-		
-		if (!name)
-			name = c.data.currentUserName;
-		
-		c.fromField.label = name;
-		c.toField.label = name;
-		
-		// The directive stamps aria-label at link time, so force a re-link
-		$scope.showPickers = false;
-		$timeout(function () {
-			$scope.showPickers = true;
-		});
-	}
-	
-	updatePickerLabels();
 	
 	// -- Listeners --
 	$scope.pagination = {
@@ -620,74 +600,19 @@ api.controller = function($scope, spUtil, $rootScope, $uibModal, spModal, $timeo
 			value: "",
 			name: 'userSelected'
 		};
-		
-		updatePickerLabels();
 	};
-	
-	// Re-label when a specific user is picked
-	$scope.$watch('userSelected.value', function (newVal, oldVal) {
-		if (newVal !== oldVal)
-			updatePickerLabels();
-	});
-	
-	// Converts a date-string with any user's preferred date format into a Date object
-	function convertStringToDate(inputDate, format) {
-		var lowFormat = format.toLowerCase();
-
-		// Retrieve date from format
-		var year = inputDate.substring(lowFormat.indexOf('y'), lowFormat.indexOf('y') + 4);
-		var month = inputDate.substring(lowFormat.indexOf('m'), lowFormat.indexOf('m') + 2);
-		var day = inputDate.substring(lowFormat.indexOf('d'), lowFormat.indexOf('d') + 2);
-		
-		var outputDate = new Date();
-		outputDate.setFullYear(year, month - 1, day);
-		return outputDate;
-	}
 	
 	$scope.filterEvents = function () {
 		
-		var from = '';
-		var to = '';
-		if (c.data.from != '' || c.data.to != '') {
-			var invalid_dates = [];
+		// Native date inputs already give us yyyy-mm-dd, which is what the server expects
+		var from = c.data.from || '';
+		var to = c.data.to || '';
 		
-			// Validate dates format
-			var date_regex = /^\d{2,4}(.|-|\/)\d{2}\1\d{2,4}$/;
-
-			if (c.data.from != '' && !c.data.from.match(date_regex)) {
-				invalid_dates.push('From');
-				c.data.from = "";
-			}
-			if (c.data.to != '' && !c.data.to.match(date_regex)) {
-				invalid_dates.push('To');
-				c.data.to = "";
-			}
-
-			if (invalid_dates.length != 0) {
-				spUtil.addErrorMessage("Incorrect date format on the field(s): " + invalid_dates.join(', '));
-				return;
-			}
-
-			// Convert string dates to date objects, corresponding to the user's prefered format
-			if (c.data.from != '')
-				from = convertStringToDate(c.data.from, g_user_date_format);
-			if (c.data.to != '')
-				to = convertStringToDate(c.data.to, g_user_date_format);
-
-			// Validate that the date range is set in order
-			if (from != '' && to != '') {
-				if (from > to) {
-					spUtil.addErrorMessage("The end date must be after the start date.");
-					c.data.from = "", c.data.to = "";
-					return;
-				}
-			}
-			
-			// Convert dates to a yyyy-mm-dd string
-			if (from != '')
-				from = from.toISOString().split('T')[0];
-			if (to != '')
-				to = to.toISOString().split('T')[0];
+		if (from && to && from > to) {
+			spUtil.addErrorMessage("The end date must be after the start date.");
+			c.data.from = "";
+			c.data.to = "";
+			return;
 		}
 		
 		c.server.get({
@@ -714,8 +639,8 @@ api.controller = function($scope, spUtil, $rootScope, $uibModal, spModal, $timeo
 
 	// Export excel file
 	$scope.fnExcelReport = function(){
-		var tab_text='<table border="2px" style="font-weight : bold;">';
-		var j=0;
+		var tab_text = '<table border="2px" style="font-weight : bold;">';
+		var j = 0;
 		if (c.data.eventManager){
 			tab_text += '<tr style="background-color: black; color:white"><th>First Name</th><th>Last Name</th><th>Job Title</th><th>Officer Title</th><th>County</th><th>State</th><th>MSA</th><th>CSA</th><th>Event Title</th><th>Event Description</th><th>Event Date</th><th>Hours Volunteered</th><th>Organization Name</th><th>LMI%</th><th>LMI</th><th>Board Member</th><th>Volunteer Category</th><th>BU Team</th><th>CD Purpose</th><th>Type of Event</th><th>CRA Approval Status</th></tr>';
 		}
@@ -725,41 +650,41 @@ api.controller = function($scope, spUtil, $rootScope, $uibModal, spModal, $timeo
 		for(j = 0 ; j < c.data.events.length ; j++){
 			var index_bg = j % 2;
 			if (index_bg == 1){
-				tab_text +='<tr style="background-color:#f2f2f2">';
+				tab_text += '<tr style="background-color:#f2f2f2">';
 			}
 			else{
-				tab_text +='<tr style="background-color:#d6d6d6">';
+				tab_text += '<tr style="background-color:#d6d6d6">';
 			}
-			tab_text += "<th>" + c.data.events[j].first_name + "</th>";
-			tab_text += "<th>" + c.data.events[j].last_name + "</th>";
-			tab_text += "<th>" + c.data.events[j].job_title + "</th>";
-			tab_text += "<th>" + c.data.events[j].officer_title + "</th>";
-			tab_text += "<th>" + c.data.events[j].county + "</th>";
-			tab_text += "<th>" + c.data.events[j].state + "</th>";
-			tab_text += "<th>" + c.data.events[j].msa + "</th>";
-			tab_text += "<th>" + c.data.events[j].csa + "</th>";
-			tab_text += "<th>" + c.data.events[j].title + "</th>";
-			tab_text += "<th>" + c.data.events[j].description + "</th>";
-			tab_text += "<th>" + c.data.events[j].date + "</th>";
-			tab_text += "<th>" + c.data.events[j].hours + "</th>";
-			tab_text += "<th>" + c.data.events[j].organization + "</th>";
-			tab_text += "<th>" + c.data.events[j].lmi + "</th>";
-			tab_text += "<th>" + c.data.events[j].lmi_person + "</th>";
-			tab_text += "<th>" + c.data.events[j].board_member + "</th>";
-			tab_text += "<th>" + c.data.events[j].category + "</th>";
+			tab_text += "<td>" + c.data.events[j].first_name + "</td>";
+			tab_text += "<td>" + c.data.events[j].last_name + "</td>";
+			tab_text += "<td>" + c.data.events[j].job_title + "</td>";
+			tab_text += "<td>" + c.data.events[j].officer_title + "</td>";
+			tab_text += "<td>" + c.data.events[j].county + "</td>";
+			tab_text += "<td>" + c.data.events[j].state + "</td>";
+			tab_text += "<td>" + c.data.events[j].msa + "</td>";
+			tab_text += "<td>" + c.data.events[j].csa + "</td>";
+			tab_text += "<td>" + c.data.events[j].title + "</td>";
+			tab_text += "<td>" + c.data.events[j].description + "</td>";
+			tab_text += "<td>" + c.data.events[j].date + "</td>";
+			tab_text += "<td>" + c.data.events[j].hours + "</td>";
+			tab_text += "<td>" + c.data.events[j].organization + "</td>";
+			tab_text += "<td>" + c.data.events[j].lmi + "</td>";
+			tab_text += "<td>" + c.data.events[j].lmi_person + "</td>";
+			tab_text += "<td>" + c.data.events[j].board_member + "</td>";
+			tab_text += "<td>" + c.data.events[j].category + "</td>";
 			if (c.data.eventManager){
-				tab_text += "<th>" + c.data.events[j].bu_team + "</th>";
-				tab_text += "<th>" + c.data.events[j].cra + "</th>";
+				tab_text += "<td>" + c.data.events[j].bu_team + "</td>";
+				tab_text += "<td>" + c.data.events[j].cra + "</td>";
 			}
-			tab_text += "<th>" + c.data.events[j].type + "</th>";
-			tab_text += "<th>" + c.data.events[j].validation_status + "</th>";
+			tab_text += "<td>" + c.data.events[j].type + "</td>";
+			tab_text += "<td>" + c.data.events[j].validation_status + "</td>";
 
 			tab_text += "</tr>";
 		}
 
 		tab_text = tab_text + "</table>";
 		tab_text = tab_text.replace(/<A[^>]*>|<\/A>/g, "");
-		tab_text = tab_text.replace(/<img[^>]*>/gi,"");
+		tab_text = tab_text.replace(/<img[^>]*>/gi, "");
 		tab_text = tab_text.replace(/<input[^>]*>|<\/input>/gi, "");
 
 		var blob = new Blob([tab_text], {
