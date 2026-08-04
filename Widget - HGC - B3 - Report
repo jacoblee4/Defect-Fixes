@@ -39,12 +39,14 @@
   <div class="picker-container">
     <div class="picker-item">From</div>
     <div class="picker-item">
-      <input type="date" class="date-input" ng-model="c.data.from" aria-label="From date">
+      <sp-date-picker id="b3_from" field="c.fromField" ng-model="c.data.from"
+                      sn-disabled="false"></sp-date-picker>
     </div>
     <div class="picker-item">To</div>
 
     <div class="picker-item">
-      <input type="date" class="date-input" ng-model="c.data.to" aria-label="To date">
+      <sp-date-picker id="b3_to" field="c.toField" ng-model="c.data.to"
+                      sn-disabled="false"></sp-date-picker>
     </div>
 
     <div>
@@ -174,30 +176,6 @@
   .picker-item-options {
     grid-column-start: 1;
     grid-column-end: 3;
-  }
-
-  .date-input {
-    width: 100%;
-    height: 34px;
-    padding: 6px 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: white;
-    color: black;
-    font-weight: normal;
-    font-size: 14px;
-    line-height: normal;
-    box-sizing: border-box;
-  }
-
-  .date-input::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    padding: 4px;
-    filter: opacity(0.6);
-  }
-
-  .date-input::-webkit-calendar-picker-indicator:hover {
-    filter: opacity(1);
   }
 
   .submit {
@@ -591,6 +569,12 @@ api.controller = function($scope, spUtil, $rootScope, $uibModal, spModal) {
 	c.selectionItems = c.data.selectionItems;
 	c.selectionChoice = c.data.selectionChoice;
 	
+	// sp-date-picker needs a field OBJECT with a label, not a string.
+	// Passing a string is what produced the literal "Show calendar for {0}"
+	// tooltip and the transparent tooltip rectangle.
+	c.fromField = { label: 'From', type: 'glide_date', value: '', displayValue: '' };
+	c.toField   = { label: 'To',   type: 'glide_date', value: '', displayValue: '' };
+	
 	// -- Listeners --
 	$scope.pagination = {
 		currentPage: 1
@@ -613,17 +597,69 @@ api.controller = function($scope, spUtil, $rootScope, $uibModal, spModal) {
 		};
 	};
 	
+	// Converts a date-string with any user's preferred date format into a Date object
+	function convertStringToDate(inputDate, format) {
+		var lowFormat = format.toLowerCase();
+
+		var year  = inputDate.substring(lowFormat.indexOf('y'), lowFormat.indexOf('y') + 4);
+		var month = inputDate.substring(lowFormat.indexOf('m'), lowFormat.indexOf('m') + 2);
+		var day   = inputDate.substring(lowFormat.indexOf('d'), lowFormat.indexOf('d') + 2);
+
+		return new Date(year, month - 1, day);
+	}
+	
+	// yyyy-mm-dd built from LOCAL date parts.
+	// The original used toISOString(), which shifted the date back a day
+	// for evening submissions in US timezones.
+	function toServerDate(d) {
+		var m   = ('0' + (d.getMonth() + 1)).slice(-2);
+		var day = ('0' + d.getDate()).slice(-2);
+		return d.getFullYear() + '-' + m + '-' + day;
+	}
+	
 	$scope.filterEvents = function () {
 		
-		// Native date inputs already give us yyyy-mm-dd, which is what the server expects
-		var from = c.data.from || '';
-		var to = c.data.to || '';
+		var from = '';
+		var to = '';
 		
-		if (from && to && from > to) {
-			spUtil.addErrorMessage("The end date must be after the start date.");
-			c.data.from = "";
-			c.data.to = "";
-			return;
+		if (c.data.from != '' || c.data.to != '') {
+			var invalid_dates = [];
+			
+			// Validate dates format
+			var date_regex = /^\d{2,4}(.|-|\/)\d{2}\1\d{2,4}$/;
+
+			if (c.data.from != '' && !c.data.from.match(date_regex)) {
+				invalid_dates.push('From');
+				c.data.from = "";
+			}
+			if (c.data.to != '' && !c.data.to.match(date_regex)) {
+				invalid_dates.push('To');
+				c.data.to = "";
+			}
+
+			if (invalid_dates.length != 0) {
+				spUtil.addErrorMessage("Incorrect date format on the field(s): " + invalid_dates.join(', '));
+				return;
+			}
+
+			// Convert string dates to date objects, using the user's preferred format
+			if (c.data.from != '')
+				from = convertStringToDate(c.data.from, g_user_date_format);
+			if (c.data.to != '')
+				to = convertStringToDate(c.data.to, g_user_date_format);
+
+			// Validate that the date range is set in order
+			if (from != '' && to != '' && from > to) {
+				spUtil.addErrorMessage("The end date must be after the start date.");
+				c.data.from = "", c.data.to = "";
+				return;
+			}
+			
+			// Convert dates to a yyyy-mm-dd string, which is what the server expects
+			if (from != '')
+				from = toServerDate(from);
+			if (to != '')
+				to = toServerDate(to);
 		}
 		
 		c.server.get({
